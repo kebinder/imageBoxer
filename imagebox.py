@@ -1,4 +1,5 @@
 import Tkinter as tk
+from PIL import Image, ImageTk, ImageGrab
 
 # Allow user to draw boxes in an image
 class ImageBoxer:
@@ -54,11 +55,20 @@ class ImageBoxer:
         self.redo.grid(row=1,column=2)
         #self.redo.pack(side=tk.LEFT,padx=5,pady=5)
 
-        # added reset button
-        self.reset = tk.Button(self.root,text="Reset",command=self.resetImage)
-        self.reset.grid(row=2,column=1)
-        #self.reset.pack(side=tk.BOTTOM,fill="x",padx=5,pady=5)
+        # added entry to set image name when saving
+        tk.Label(self.root,text="Image Name: ").grid(row=2,column=1)
+        self.imageName = tk.Entry(self.root)
+        self.imageName.grid(row=2,column=2)
 
+        # added reset button
+        self.reset = tk.Button(self.root,text="Reset",command=self.resetAll)
+        self.reset.grid(row=3,column=1)
+
+        # added save picture button (windows only)
+        self.save = tk.Button(self.root,text="Save",command=self.saveImage)
+        self.save.grid(row=3,column=2)
+
+        
     # delete box
     def listboxDoubleClick(self, event):
         if (len(self.listbox.curselection()) > 0): #added if to prevent index out of range error
@@ -113,7 +123,7 @@ class ImageBoxer:
             self.listbox.insert(tk.END,str(len(self.rectangles)))
             del self.deleted[index]
 
-    def resetImage(self):
+    def resetAll(self):
         # Get the amount of rectangles and delete them from listbox/canvas/rectangles
         amount = len(self.rectangles)
         # Delete the first index to not go out of range
@@ -122,6 +132,7 @@ class ImageBoxer:
             self.listbox.delete(0)
             del self.rectangles[0]
         self.deleted = []
+        self.imageName.delete(0, tk.END)
 
     # Used to fix numbers in listbox when deleting from earlier index and adding another box.
     # Previously doing so will create duplicate numbers because listbox is inserting str(len(self.rectangles))
@@ -130,9 +141,30 @@ class ImageBoxer:
         for i in range(len(self.rectangles)):
             self.listbox.insert(tk.END,str(i+1))
         
-        
+    def saveImage(self):
+        image = [self.canvas.canvasx(0),self.canvas.canvasy(0),self.canvas.canvasx(1),self.canvas.canvasy(1)]
+        #self.canvas.postscript(file="out.eps")
+        #image = Image.open("out.eps")
+        #image.save("out.jpg")
+        # Get x,y position of top left of window
+        window_x = self.root.winfo_x()
+        window_y = self.root.winfo_y()
+        print(self.imageName)
+        # Setup coordinates of the canvas to take screenshot
+        image[0] = self.root.winfo_x()+(self.canvas.winfo_width()-self.canvas.winfo_width())+10
+        image[1] = self.root.winfo_y()+(self.root.winfo_height()-self.canvas.winfo_height())
+        image[2] = abs(self.canvas.winfo_width()+window_x)
+        image[3] = abs(self.canvas.winfo_height()+window_y)
+        image = ImageGrab.grab(bbox=(image))
+        image.show()
+        image.save(self.imageName.get()+".jpg")
+        #self.savedimage = ImageGrab.grab(bbox=image)
+        #self.savedimage.show()
+        #self.savedimage.save("out.jpg")
+        print('Screenshoot of tkinter.Canvas saved in "'+self.imageName.get()+'.jpg"')
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.minsize(803,452)
     imageBoxer = ImageBoxer(root)
     root.mainloop()
